@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { createStore, NotFound, defaultSeed } from './graph-store.js';
 import { actions } from './actions.js';
+import { STATUSES, isStatus } from './statuses.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -17,6 +18,8 @@ export function createApp({ store = createStore(defaultSeed()) } = {}) {
     autoescape: true,
     noCache: process.env.NODE_ENV !== 'production',
   });
+  // Available to every template (the inspector's status <select> renders these).
+  env.addGlobal('statuses', STATUSES);
 
   app.use(express.urlencoded({ extended: true }));
   app.use(express.static(resolve(root, 'public')));
@@ -72,6 +75,8 @@ export function createApp({ store = createStore(defaultSeed()) } = {}) {
     for (const key of ['title', 'amount']) {
       if (req.body[key] !== undefined) patch[key] = req.body[key];
     }
+    // Only accept a known status so the card classes stay meaningful.
+    if (isStatus(req.body.status)) patch.status = req.body.status;
     const node = store.setNodeData(req.params.id, patch);
     res.type('html').send(
       env.render('_graph-oob-inspector.njk', { ...store.toViewModel(), actions, node }),

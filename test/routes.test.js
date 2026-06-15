@@ -95,6 +95,37 @@ test('POST /nodes/:id/data edits fields; updates card + OOB inspector', async ()
   assert.match(html, /value="Order #42 \(edited\)"/);
 });
 
+test('POST /nodes/:id/data changes status; toggles the Approve button', async () => {
+  // ship-7 starts 'ready' (no Approve button). Set it to 'pending'.
+  let html = await (await fetch(`${base}/nodes/ship-7/data`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: form({ status: 'pending' }),
+  })).text();
+  assert.match(html, /<flow-node id="ship-7"[\s\S]*?card--pending/);
+  assert.match(html, /\/orders\/ship-7\/approve/, 'pending status shows the Approve button');
+  // inspector select reflects the saved status
+  assert.match(html, /<option value="pending" selected>/);
+
+  // Move it to 'approved' — Approve button goes away.
+  html = await (await fetch(`${base}/nodes/ship-7/data`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: form({ status: 'approved' }),
+  })).text();
+  assert.match(html, /<flow-node id="ship-7"[\s\S]*?card--approved/);
+  assert.doesNotMatch(html, /\/orders\/ship-7\/approve/);
+});
+
+test('POST /nodes/:id/data ignores an unknown status', async () => {
+  const html = await (await fetch(`${base}/nodes/order-42/data`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: form({ status: 'bogus' }),
+  })).text();
+  assert.doesNotMatch(html, /card--bogus/);
+});
+
 test('POST /nodes/:id/delete drops the node and returns full graph', async () => {
   const res = await fetch(`${base}/nodes/ship-7/delete`, { method: 'POST' });
   const html = await res.text();

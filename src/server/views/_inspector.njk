@@ -12,11 +12,17 @@
   <label>Amount
     <input name="amount" value="{{ node.data.amount }}" autocomplete="off" />
   </label>
+  <label>Status
+    <select name="status">
+      {% for s in statuses %}
+      <option value="{{ s }}"{% if s == node.data.status %} selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </label>
   <button type="submit">Save</button>
 </form>
 
 <dl class="inspector-meta">
   <dt>ID</dt><dd>{{ node.id }}</dd>
-  <dt>Status</dt><dd>{{ node.data.status }}</dd>
   <dt>Position</dt><dd>{{ node.x }}, {{ node.y }}</dd>
 </dl>

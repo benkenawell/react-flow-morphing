@@ -23,7 +23,7 @@
     #inspector:empty::before { content: "Click a node to inspect"; color: #9ca3af; }
     .inspector-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
     .inspector-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #6b7280; }
-    .inspector-form input { font: inherit; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; }
+    .inspector-form input, .inspector-form select { font: inherit; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; }
     .inspector-form button { align-self: flex-start; font: inherit; padding: 6px 14px; border: 1px solid #2563eb;
             background: #2563eb; color: #fff; border-radius: 6px; cursor: pointer; }
     .inspector-meta dt { font-size: 11px; text-transform: uppercase; color: #9ca3af; margin-top: 8px; }
@@ -34,6 +34,9 @@
             background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
     .card--approved { border-color: #16a34a; }
     .card--pending { border-color: #d97706; }
+    .card--ready { border-color: #2563eb; }
+    .card--draft { border-color: #9ca3af; }
+    .card--new { border-color: #7c3aed; }
     .card__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .card__amount { color: #6b7280; margin: 4px 0 8px; }
     .card__actions { display: flex; gap: 6px; }
@@ -43,6 +46,9 @@
             padding: 1px 6px; border-radius: 999px; background: #f3f4f6; color: #374151; }
     .card--approved .badge { background: #dcfce7; color: #166534; }
     .card--pending .badge { background: #fef3c7; color: #92400e; }
+    .card--ready .badge { background: #dbeafe; color: #1e40af; }
+    .card--draft .badge { background: #f3f4f6; color: #4b5563; }
+    .card--new .badge { background: #ede9fe; color: #5b21b6; }
   </style>
   <!-- htmx + the idiomorph swap extension (registers hx-swap="morph:*") -->
   <script src="/vendor/htmx.min.js"></script>

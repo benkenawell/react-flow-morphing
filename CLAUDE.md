@@ -82,6 +82,10 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
 - **Editable fields** are plain htmx forms in the inspector (light DOM) that POST to `/nodes/:id/data`;
   the response morphs `#graph` (so the node card updates) and refreshes `#inspector` out-of-band. Add a
   new editable field by adding the input to `_inspector.njk` and the key to the route's allowlist in `app.js`.
+- **Node status** is an enum in `src/server/statuses.js` (`STATUSES` / `isStatus`) — the single source
+  of truth for the inspector's `<select>` (exposed to all templates via `env.addGlobal('statuses', …)`),
+  the route's validation, and the `.card--{status}` CSS in `page.njk`. Add a status in all three when
+  extending it (the route rejects unknown values so cards stay styleable).
 - **OOB swaps must use a `morph` style.** Because `hx-ext="morph"` is on `<body>`, the idiomorph
   extension intercepts every OOB swap, and its `isInlineSwap()` throws on non-morph styles like
   `innerHTML` (`Cannot read properties of undefined (reading 'swapStyle')`). Use `hx-swap-oob="morph"`
