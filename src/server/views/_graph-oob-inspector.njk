@@ -1,0 +1,6 @@
+{# Response for an inspector edit: the whole graph (morphed into #graph) plus an
+   out-of-band refresh of #inspector so the panel reflects the saved server state. #}
+{% include "_graph.njk" %}
+<div id="inspector" hx-swap-oob="innerHTML">
+{% include "_inspector.njk" %}
+</div>

@@ -19,11 +19,11 @@ events — it never writes light DOM, so morph and React never fight.
 ## Run
 
 ```bash
-mise install        # Node (see mise.toml)
-npm install
-npm start           # build + serve http://localhost:3000
-npm run dev         # watch mode
-npm test            # node --test
+mise install        # Node + pnpm (see mise.toml)
+pnpm install
+pnpm start          # build + serve http://localhost:3000
+pnpm run dev        # watch mode
+pnpm test           # node --test
 ```
 
 ## Markup contract

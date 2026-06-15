@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Server-driven React Flow via web component + htmx + idiomorph",
+  "packageManager": "pnpm@11.3.0",
   "scripts": {
     "build": "node scripts/build.js",
     "dev": "node scripts/build.js --watch & node --watch src/server/server.js",

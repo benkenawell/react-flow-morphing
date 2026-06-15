@@ -1,8 +1,22 @@
-{# Targeted partial swapped into #inspector (not the graph). #}
+{# Inspector panel content. Swapped into #inspector by the Inspect button, and
+   re-rendered out-of-band after an edit so it always reflects server truth.
+   The edit form is plain htmx in light DOM: it posts the field, the server
+   mutates the store, and the WHOLE graph morphs so the node card updates live. #}
 <h2 style="margin-top:0">{{ node.data.title }}</h2>
-<dl>
+
+<form class="inspector-form"
+  hx-post="/nodes/{{ node.id }}/data" hx-target="#graph" hx-swap="morph:innerHTML">
+  <label>Title
+    <input name="title" value="{{ node.data.title }}" autocomplete="off" />
+  </label>
+  <label>Amount
+    <input name="amount" value="{{ node.data.amount }}" autocomplete="off" />
+  </label>
+  <button type="submit">Save</button>
+</form>
+
+<dl class="inspector-meta">
   <dt>ID</dt><dd>{{ node.id }}</dd>
   <dt>Status</dt><dd>{{ node.data.status }}</dd>
-  <dt>Amount</dt><dd>{{ node.data.amount }}</dd>
   <dt>Position</dt><dd>{{ node.x }}, {{ node.y }}</dd>
 </dl>

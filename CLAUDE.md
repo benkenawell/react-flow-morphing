@@ -10,11 +10,17 @@ custom element whose **light-DOM children are the declarative graph**.
 
 ## Commands
 
-- `npm install` — deps (Node 24 via mise; `mise install` first).
-- `npm run build` — esbuild bundles the client to `public/flow-component.js` and copies vendor JS to `public/vendor/`.
-- `npm run dev` — esbuild `--watch` + `node --watch` server.
-- `npm start` — build then serve on http://localhost:3000.
-- `npm test` / `node --test` — full suite. Single file: `node --test test/routes.test.js`. Single case: `node --test --test-name-pattern "moveNode"`.
+Package manager is **pnpm** (via mise). Run `mise install` first to get Node + pnpm.
+
+- `pnpm install` — deps.
+- `pnpm run build` — esbuild bundles the client to `public/flow-component.js` and copies vendor JS to `public/vendor/`.
+- `pnpm run dev` — esbuild `--watch` + `node --watch` server.
+- `pnpm start` — build then serve on http://localhost:3000.
+- `pnpm test` / `node --test` — full suite. Single file: `node --test test/routes.test.js`. Single case: `node --test --test-name-pattern "moveNode"`.
+
+**pnpm gotcha:** esbuild has a postinstall (fetches its platform binary); pnpm blocks build scripts by
+default. It's allowlisted in `pnpm-workspace.yaml` (`allowBuilds: { esbuild: true }`). If install logs
+`ERR_PNPM_IGNORED_BUILDS`, run `pnpm install --force` to run the approved build and clear the gate.
 
 ## Architecture — the unidirectional loop
 
@@ -49,7 +55,8 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
   an ephemeral port.
 - `src/server/actions.js` — the `<flow-action>` wiring (event name → endpoint), rendered into the graph.
 - `src/server/views/` — `page.njk` (shell; card CSS lives here since slotted bodies are styled by
-  *document* CSS, not shadow CSS), `_graph.njk`, `_node-body.njk`, `_inspector.njk`.
+  *document* CSS, not shadow CSS), `_graph.njk`, `_node-body.njk`, `_inspector.njk` (editable form),
+  `_graph-oob-inspector.njk` (edit response: graph + OOB inspector refresh).
 - `src/client/model.js` + `bridge.js` — **pure, browser-free** (tested with linkedom). model = light DOM →
   React Flow inputs; bridge = React Flow event → htmx params + `{id}` URL substitution.
 - `src/client/react-flow.element.jsx` — the custom element (shadow root, React root, observer, `#emit`).
@@ -67,6 +74,9 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
 - New interaction events: add a `<flow-action on="...">` (in `actions.js`) + a `case` in `bridge.js` +
   the React Flow handler in `canvas.jsx`.
 - React Flow CSS is injected into the shadow root (`styles.js`, imported as text by esbuild's `.css` loader).
+- **Editable fields** are plain htmx forms in the inspector (light DOM) that POST to `/nodes/:id/data`;
+  the response morphs `#graph` (so the node card updates) and refreshes `#inspector` out-of-band. Add a
+  new editable field by adding the input to `_inspector.njk` and the key to the route's allowlist in `app.js`.
 
 ## Verification beyond tests
 

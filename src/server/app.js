@@ -60,6 +60,19 @@ export function createApp({ store = createStore(defaultSeed()) } = {}) {
     res.type('html').send(renderGraph());
   }));
 
+  // Editable fields from the inspector panel. Mutate node data, then return the
+  // whole graph (morphed into #graph) plus an OOB refresh of the inspector.
+  app.post('/nodes/:id/data', wrap((req, res) => {
+    const patch = {};
+    for (const key of ['title', 'amount']) {
+      if (req.body[key] !== undefined) patch[key] = req.body[key];
+    }
+    const node = store.setNodeData(req.params.id, patch);
+    res.type('html').send(
+      env.render('_graph-oob-inspector.njk', { ...store.toViewModel(), actions, node }),
+    );
+  }));
+
   // Targeted (non-graph) partial: node inspector panel.
   app.get('/nodes/:id/panel', wrap((req, res) => {
     const node = store.toViewModel().nodes.find((n) => n.id === req.params.id);

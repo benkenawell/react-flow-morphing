@@ -67,6 +67,22 @@ test('POST /orders/:id/approve mutates the node body (status badge)', async () =
   assert.doesNotMatch(html, /\/orders\/order-42\/approve/);
 });
 
+test('POST /nodes/:id/data edits fields; updates card + OOB inspector', async () => {
+  const res = await fetch(`${base}/nodes/order-42/data`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: form({ title: 'Order #42 (edited)', amount: '$9.99' }),
+  });
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  // node card (in the morphed graph) reflects the new title/amount
+  assert.match(html, /Order #42 \(edited\)/);
+  assert.match(html, /\$9\.99/);
+  // out-of-band inspector refresh is included, pre-filled with the saved value
+  assert.match(html, /id="inspector" hx-swap-oob="innerHTML"/);
+  assert.match(html, /value="Order #42 \(edited\)"/);
+});
+
 test('POST /nodes/:id/delete drops the node and returns full graph', async () => {
   const res = await fetch(`${base}/nodes/ship-7/delete`, { method: 'POST' });
   const html = await res.text();

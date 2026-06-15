@@ -1,0 +1,4 @@
+# esbuild needs its postinstall to download/validate the platform binary; pnpm
+# blocks build scripts unless explicitly allowed here.
+allowBuilds:
+  esbuild: true
