@@ -74,8 +74,18 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
 - A named `<slot>` projects **only direct children of the shadow host** — keep `slot="node-{id}"` on the
   `<flow-node>` element itself, never on a nested wrapper.
 - Action routes must return the **full** graph, not a surgical fragment — idiomorph relies on stable
-  `id`s to minimize the mutation. New node types: add a branch in `_node-body.njk` and register the
-  React component in `node-types.jsx`.
+  `id`s to minimize the mutation.
+- **Node "kind" (domain type) is server-only.** Because bodies are server HTML projected through a slot,
+  React Flow's node component is type-agnostic, so domain types (order/shipping/invoice) need **no
+  client changes**. Every `<flow-node>` keeps React Flow render `type="card"` (→ `CardNode`); the
+  separate `kind` field drives everything via the registry in `src/server/node-kinds.js` (`NODE_KINDS`):
+  the Add-node dialog buttons, the inspector inputs (`_inspector.njk` loops `nodeKinds[kind].fields`),
+  the body display (`_node-body.njk`), `addNode` defaults, and the `/nodes/:id/data` edit allowlist
+  (derived from the node's kind so a request can't write another kind's fields). **Add a new domain type
+  by adding one entry to `NODE_KINDS` — nothing else.** Don't overload React Flow's `type` for this (that
+  would need a `nodeTypes` registration in `canvas.jsx`, i.e. a client change). The Add-node picker is a
+  `<dialog>` opened/closed by the Invoker Commands API (`command`/`commandfor`, no JS); each type button
+  also fires its htmx create on the same click.
 - New interaction events: add a `<flow-action on="...">` (in `actions.js`) + a `case` in `bridge.js` +
   the React Flow handler in `canvas.jsx`. **Caveat:** this only works for React Flow events backed by
   *native* listeners (drag, connect, delete) — they cross the shadow/slot boundary. React *synthetic*

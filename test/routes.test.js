@@ -10,8 +10,8 @@ let store;
 before(async () => {
   store = createStore({
     nodes: [
-      { id: 'order-42', x: 40, y: 80, type: 'card', data: { title: 'Order #42', status: 'pending', amount: '$5' } },
-      { id: 'ship-7', x: 300, y: 40, type: 'card', data: { title: 'Shipment #7', status: 'ready', amount: '1kg' } },
+      { id: 'order-42', x: 40, y: 80, kind: 'order', data: { title: 'Order #42', status: 'pending', amount: 5, estimatedDelivery: '2026-01-01' } },
+      { id: 'ship-7', x: 300, y: 40, kind: 'shipping', data: { title: 'Shipment #7', status: 'ready', address: '1 A St' } },
     ],
     edges: [{ id: 'e1', source: 'order-42', target: 'ship-7' }],
   });
@@ -40,6 +40,22 @@ test('GET / renders the full page with the web component and graph', async () =>
   assert.match(html, /<div class="card[^"]*"\s+hx-get="\/nodes\/order-42\/panel" hx-target="#inspector"/);
   assert.doesNotMatch(html, />\s*Inspect\s*</);
   assert.doesNotMatch(html, /<flow-action on="nodeClick"/);
+  // Add-node dialog (Invoker Commands API) with a create button generated per kind
+  assert.match(html, /command="show-modal" commandfor="add-dialog"/);
+  assert.match(html, /<dialog id="add-dialog"/);
+  assert.match(html, /hx-vals='{"kind":"shipping"}'/);
+});
+
+test('GET /nodes/:id/panel renders the kind-specific inputs', async () => {
+  // order-42 is an order: Amount (number) + Estimated delivery, no Address
+  let html = await (await fetch(`${base}/nodes/order-42/panel`)).text();
+  assert.match(html, /name="amount" type="number"/);
+  assert.match(html, /name="estimatedDelivery"/);
+  assert.doesNotMatch(html, /name="address"/);
+  // ship-7 is shipping: Address, no Amount
+  html = await (await fetch(`${base}/nodes/ship-7/panel`)).text();
+  assert.match(html, /name="address"/);
+  assert.doesNotMatch(html, /name="amount"/);
 });
 
 test('POST /nodes/move returns the WHOLE graph with updated coords', async () => {
@@ -81,15 +97,20 @@ test('POST /nodes/move does NOT OOB when the open inspector is a different node'
   assert.doesNotMatch(html, /hx-swap-oob/);
 });
 
-test('POST /nodes/create adds a node and returns the full graph', async () => {
+test('POST /nodes/create adds a node of the requested kind', async () => {
   const before = (await (await fetch(`${base}/`)).text()).match(/<flow-node /g).length;
-  const res = await fetch(`${base}/nodes/create`, { method: 'POST' });
+  const res = await fetch(`${base}/nodes/create`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: form({ kind: 'shipping' }),
+  });
   assert.equal(res.status, 200);
   const html = await res.text();
-  const after = html.match(/<flow-node /g).length;
-  assert.equal(after, before + 1);
-  // new node is a projectable direct child (carries its slot) and existing nodes remain
-  assert.match(html, /<flow-node id="node-\d+"[^>]*slot="node-node-\d+"/);
+  assert.equal(html.match(/<flow-node /g).length, before + 1);
+  // new node renders as React Flow type="card" (unchanged client) with its slot
+  assert.match(html, /<flow-node id="node-\d+"[^>]*type="card"[^>]*slot="node-node-\d+"/);
+  // and its body shows the Shipping kind's Address field (no Amount)
+  assert.match(html, /Address:/);
   assert.match(html, /<flow-node id="order-42"/);
 });
 
@@ -156,6 +177,17 @@ test('POST /nodes/:id/data ignores an unknown status', async () => {
     body: form({ status: 'bogus' }),
   })).text();
   assert.doesNotMatch(html, /card--bogus/);
+});
+
+test('POST /nodes/:id/data only writes fields belonging to the node kind', async () => {
+  // ship-7 is shipping: `address` is valid, `amount` is not.
+  const html = await (await fetch(`${base}/nodes/ship-7/data`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: form({ address: '9 New Rd', amount: '999' }),
+  })).text();
+  assert.match(html, /9 New Rd/); // shipping field saved
+  assert.doesNotMatch(html, /999/); // non-kind field ignored
 });
 
 test('POST /nodes/:id/delete drops the node and returns full graph', async () => {

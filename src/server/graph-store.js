@@ -1,7 +1,8 @@
 // Pure in-memory graph model. No Express / HTTP deps so it is trivially unit-testable.
 // The server holds ONE canonical store; every action mutates it and re-renders the whole graph.
+import { NODE_KINDS, defaultFields } from './node-kinds.js';
 
-/** @typedef {{id:string,x:number,y:number,type:string,data:Record<string,any>}} Node */
+/** @typedef {{id:string,x:number,y:number,type:string,kind:string,data:Record<string,any>}} Node */
 /** @typedef {{id:string,source:string,target:string,sourceHandle?:string,targetHandle?:string,label?:string}} Edge */
 
 export function createStore(seed = defaultSeed()) {
@@ -12,8 +13,9 @@ export function createStore(seed = defaultSeed()) {
   let edgeSeq = edges.size;
   let nodeSeq = nodes.size;
 
-  // Create a node with a unique id, defaulting position/data for a blank card.
-  function addNode({ type = 'card', x, y, data = {} } = {}) {
+  // Create a node of the given kind with a unique id and blank kind-specific fields.
+  function addNode({ kind = 'order', x, y, data = {} } = {}) {
+    const k = NODE_KINDS[kind] ? kind : 'order';
     let n = ++nodeSeq;
     let id = `node-${n}`;
     while (nodes.has(id)) id = `node-${(n = ++nodeSeq)}`;
@@ -23,8 +25,8 @@ export function createStore(seed = defaultSeed()) {
       id,
       x: x ?? 80 + offset,
       y: y ?? 120 + offset,
-      type,
-      data: { title: `Node ${n}`, status: 'new', amount: '—', ...data },
+      kind: k,
+      data: { title: `${NODE_KINDS[k].label} ${n}`, status: 'new', ...defaultFields(k), ...data },
     });
     nodes.set(id, node);
     return node;
@@ -97,7 +99,10 @@ function normalizeNode(n) {
     id: n.id,
     x: Number(n.x) || 0,
     y: Number(n.y) || 0,
+    // `type` is React Flow's render type (always the slot-rendering 'card'); `kind`
+    // is the server-only domain type that drives body/inspector fields.
     type: n.type || 'card',
+    kind: n.kind || 'order',
     data: { ...(n.data || {}) },
   };
 }
@@ -105,9 +110,9 @@ function normalizeNode(n) {
 export function defaultSeed() {
   return {
     nodes: [
-      { id: 'order-42', x: 40, y: 80, type: 'card', data: { title: 'Order #42', status: 'pending', amount: '$129.00' } },
-      { id: 'ship-7', x: 360, y: 40, type: 'card', data: { title: 'Shipment #7', status: 'ready', amount: '2.4kg' } },
-      { id: 'invoice-9', x: 360, y: 220, type: 'card', data: { title: 'Invoice #9', status: 'draft', amount: '$129.00' } },
+      { id: 'order-42', x: 40, y: 80, kind: 'order', data: { title: 'Order #42', status: 'pending', amount: 129, estimatedDelivery: '2026-06-20' } },
+      { id: 'ship-7', x: 360, y: 40, kind: 'shipping', data: { title: 'Shipment #7', status: 'ready', address: '123 Main St, Springfield' } },
+      { id: 'invoice-9', x: 360, y: 220, kind: 'invoice', data: { title: 'Invoice #9', status: 'draft', amount: 129, phone: '555-0142' } },
     ],
     edges: [
       { id: 'e-order-ship', source: 'order-42', target: 'ship-7' },

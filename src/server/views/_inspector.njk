@@ -14,9 +14,12 @@
   <label>Title
     <input name="title" value="{{ node.data.title }}" autocomplete="off" />
   </label>
-  <label>Amount
-    <input name="amount" value="{{ node.data.amount }}" autocomplete="off" />
+  {# Inputs are driven by the node's kind (src/server/node-kinds.js). #}
+  {% for f in nodeKinds[node.kind].fields %}
+  <label>{{ f.label }}
+    <input name="{{ f.name }}" type="{{ f.type }}" value="{{ node.data[f.name] }}" autocomplete="off" />
   </label>
+  {% endfor %}
   <label>Status
     <select name="status">
       {% for s in statuses %}

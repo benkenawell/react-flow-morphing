@@ -7,6 +7,7 @@ import { dirname, resolve } from 'node:path';
 import { createStore, NotFound, defaultSeed } from './graph-store.js';
 import { actions } from './actions.js';
 import { STATUSES, isStatus } from './statuses.js';
+import { NODE_KINDS, isNodeKind } from './node-kinds.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -18,8 +19,9 @@ export function createApp({ store = createStore(defaultSeed()) } = {}) {
     autoescape: true,
     noCache: process.env.NODE_ENV !== 'production',
   });
-  // Available to every template (the inspector's status <select> renders these).
+  // Available to every template (status <select>, kind picker + per-kind fields).
   env.addGlobal('statuses', STATUSES);
+  env.addGlobal('nodeKinds', NODE_KINDS);
 
   app.use(express.urlencoded({ extended: true }));
   app.use(express.static(resolve(root, 'public')));
@@ -45,7 +47,8 @@ export function createApp({ store = createStore(defaultSeed()) } = {}) {
   }));
 
   app.post('/nodes/create', wrap((req, res) => {
-    store.addNode({ type: req.body.type || 'card' });
+    const kind = isNodeKind(req.body.kind) ? req.body.kind : 'order';
+    store.addNode({ kind });
     res.type('html').send(renderGraph());
   }));
 
@@ -78,8 +81,13 @@ export function createApp({ store = createStore(defaultSeed()) } = {}) {
   // Editable fields from the inspector panel. Mutate node data, then return the
   // whole graph (morphed into #graph) plus an OOB refresh of the inspector.
   app.post('/nodes/:id/data', wrap((req, res) => {
+    const existing = store.nodes.get(req.params.id);
+    if (!existing) throw new NotFound(`node ${req.params.id}`);
+    // Allowlist = the common Title plus exactly this kind's fields, so a request
+    // can't write fields from another kind.
+    const allowed = ['title', ...NODE_KINDS[existing.kind].fields.map((f) => f.name)];
     const patch = {};
-    for (const key of ['title', 'amount']) {
+    for (const key of allowed) {
       if (req.body[key] !== undefined) patch[key] = req.body[key];
     }
     // Only accept a known status so the card classes stay meaningful.

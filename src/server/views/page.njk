@@ -14,6 +14,11 @@
     .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid #2563eb;
              background: #2563eb; color: #fff; border-radius: 6px; cursor: pointer; }
     .toolbar .hint { font-size: 12px; color: #9ca3af; }
+    .add-dialog { border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px; min-width: 240px; }
+    .add-dialog::backdrop { background: rgba(17,24,39,.35); }
+    .add-dialog h3 { margin: 0 0 12px; font-size: 15px; }
+    .add-dialog__choices { display: flex; flex-direction: column; gap: 8px; }
+    .add-dialog__cancel { margin-top: 12px; background: #fff !important; color: #374151 !important; border-color: #d1d5db !important; }
     main { display: grid; grid-template-columns: 1fr 280px; gap: 0; height: calc(100vh - 64px); }
     react-flow { display: block; width: 100%; height: 100%; }
     /* <flow-node> is projected into React Flow via a slot; metadata elements stay hidden. */
@@ -38,8 +43,11 @@
     .card--draft { border-color: #9ca3af; }
     .card--new { border-color: #7c3aed; }
     .card__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .card__amount { color: #6b7280; margin: 4px 0 8px; }
-    .card__actions { display: flex; gap: 6px; }
+    .card__kind { font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: #9ca3af; margin: 2px 0 6px; }
+    .card__field { color: #4b5563; font-size: 13px; }
+    .card__field + .card__actions { margin-top: 8px; }
+    .card__label { color: #9ca3af; }
+    .card__actions { display: flex; gap: 6px; margin-top: 8px; }
     .card__actions button { font: inherit; padding: 2px 8px; border: 1px solid #d1d5db;
             border-radius: 6px; background: #f9fafb; cursor: pointer; }
     .badge { font-size: 11px; text-transform: uppercase; letter-spacing: .03em;
@@ -63,9 +71,22 @@
       <p>React Flow in a web component. Server owns state; htmx + idiomorph morph the graph.</p>
     </div>
     <div class="toolbar">
-      <button type="button" hx-post="/nodes/create" hx-target="#graph" hx-swap="morph:innerHTML">
-        + Add node
-      </button>
+      {# Invoker Commands API: command/commandfor open & close the <dialog> natively
+         (no JS). Each type button also fires its htmx create on the same click —
+         closing the dialog only hides it, so the button stays in the DOM and the
+         request proceeds. Buttons are generated from the kind registry. #}
+      <button type="button" command="show-modal" commandfor="add-dialog">+ Add node</button>
+      <dialog id="add-dialog" class="add-dialog">
+        <h3>Add a node</h3>
+        <div class="add-dialog__choices">
+          {% for key, t in nodeKinds %}
+          <button type="button" command="close" commandfor="add-dialog"
+            hx-post="/nodes/create" hx-vals='{"kind":"{{ key }}"}'
+            hx-target="#graph" hx-swap="morph:innerHTML">{{ t.label }}</button>
+          {% endfor %}
+        </div>
+        <button type="button" class="add-dialog__cancel" command="close" commandfor="add-dialog">Cancel</button>
+      </dialog>
       <span class="hint">Drag on the canvas to multi-select · ⌫ deletes selection</span>
     </div>
   </header>

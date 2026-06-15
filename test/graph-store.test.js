@@ -17,14 +17,24 @@ test('moveNode updates coordinates as numbers', () => {
   assert.deepEqual([node.x, node.y], [40, 55]);
 });
 
-test('addNode creates a unique node with defaults', () => {
+test('addNode creates a unique node with kind defaults', () => {
   const store = createStore(seed());
-  const a = store.addNode();
-  const b = store.addNode();
+  const a = store.addNode({ kind: 'shipping' });
+  const b = store.addNode({ kind: 'invoice' });
   assert.notEqual(a.id, b.id);
-  assert.equal(a.type, 'card');
+  assert.equal(a.type, 'card'); // React Flow render type is always 'card'
+  assert.equal(a.kind, 'shipping');
   assert.equal(a.data.status, 'new');
+  assert.equal(a.data.address, ''); // shipping's blank field
+  assert.equal(b.kind, 'invoice');
+  assert.equal(b.data.amount, 0); // invoice's number field defaults to 0
   assert.equal(store.toViewModel().nodes.length, 4);
+});
+
+test('addNode defaults to order and falls back on unknown kind', () => {
+  const store = createStore(seed());
+  assert.equal(store.addNode().kind, 'order');
+  assert.equal(store.addNode({ kind: 'bogus' }).kind, 'order');
 });
 
 test('addNode never collides with existing ids', () => {
