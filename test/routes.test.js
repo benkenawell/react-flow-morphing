@@ -40,9 +40,9 @@ test('GET / renders the full page with the web component and graph', async () =>
   assert.match(html, /<div class="card[^"]*"\s+hx-get="\/nodes\/order-42\/panel" hx-target="#inspector"/);
   assert.doesNotMatch(html, />\s*Inspect\s*</);
   assert.doesNotMatch(html, /<flow-action on="nodeClick"/);
-  // Add-node dialog (Invoker Commands API) with a create button generated per kind
-  assert.match(html, /command="show-modal" commandfor="add-dialog"/);
-  assert.match(html, /<dialog id="add-dialog"/);
+  // Add-node popover (Invoker Commands API) with a create button generated per kind
+  assert.match(html, /command="toggle-popover" commandfor="add-popover"/);
+  assert.match(html, /<menu id="add-popover" popover/);
   assert.match(html, /hx-vals='{"kind":"shipping"}'/);
 });
 

@@ -14,11 +14,16 @@
     .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid #2563eb;
              background: #2563eb; color: #fff; border-radius: 6px; cursor: pointer; }
     .toolbar .hint { font-size: 12px; color: #9ca3af; }
-    .add-dialog { border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px; min-width: 240px; }
-    .add-dialog::backdrop { background: rgba(17,24,39,.35); }
-    .add-dialog h3 { margin: 0 0 12px; font-size: 15px; }
-    .add-dialog__choices { display: flex; flex-direction: column; gap: 8px; }
-    .add-dialog__cancel { margin-top: 12px; background: #fff !important; color: #374151 !important; border-color: #d1d5db !important; }
+    /* Add-node popover, tethered to its trigger with CSS anchor positioning. */
+    .add-trigger { anchor-name: --add-trigger; }
+    .add-popover { position-anchor: --add-trigger; position-area: bottom span-right;
+            position-try-fallbacks: flip-block, flip-inline; inset: auto; margin: 6px 0 0;
+            border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px; min-width: 180px;
+            list-style: none; box-shadow: 0 10px 30px rgba(0,0,0,.15); }
+    /* Only set display when open, so the UA `[popover]:not(:popover-open){display:none}`
+       still hides it when closed (author styles otherwise override the UA rule). */
+    .add-popover:popover-open { display: flex; flex-direction: column; gap: 6px; }
+    .add-popover li { display: contents; }
     main { display: grid; grid-template-columns: 1fr 280px; gap: 0; height: calc(100vh - 64px); }
     react-flow { display: block; width: 100%; height: 100%; }
     /* <flow-node> is projected into React Flow via a slot; metadata elements stay hidden. */
@@ -71,22 +76,19 @@
       <p>React Flow in a web component. Server owns state; htmx + idiomorph morph the graph.</p>
     </div>
     <div class="toolbar">
-      {# Invoker Commands API: command/commandfor open & close the <dialog> natively
-         (no JS). Each type button also fires its htmx create on the same click —
-         closing the dialog only hides it, so the button stays in the DOM and the
-         request proceeds. Buttons are generated from the kind registry. #}
-      <button type="button" command="show-modal" commandfor="add-dialog">+ Add node</button>
-      <dialog id="add-dialog" class="add-dialog">
-        <h3>Add a node</h3>
-        <div class="add-dialog__choices">
-          {% for key, t in nodeKinds %}
-          <button type="button" command="close" commandfor="add-dialog"
-            hx-post="/nodes/create" hx-vals='{"kind":"{{ key }}"}'
-            hx-target="#graph" hx-swap="morph:innerHTML">{{ t.label }}</button>
-          {% endfor %}
-        </div>
-        <button type="button" class="add-dialog__cancel" command="close" commandfor="add-dialog">Cancel</button>
-      </dialog>
+      {# Invoker Commands API toggles a popover (light-dismiss: click-away / Esc
+         close it for free, so no Cancel button). CSS anchor positioning tethers it
+         to the trigger. Each type button also fires its htmx create on the same
+         click — hiding the popover only removes it from the top layer, so the
+         button stays in the DOM and the request proceeds. Generated from the registry. #}
+      <button type="button" class="add-trigger" command="toggle-popover" commandfor="add-popover">+ Add node</button>
+      <menu id="add-popover" popover class="add-popover">
+        {% for key, t in nodeKinds %}
+        <li><button type="button" command="hide-popover" commandfor="add-popover"
+          hx-post="/nodes/create" hx-vals='{"kind":"{{ key }}"}'
+          hx-target="#graph" hx-swap="morph:innerHTML">{{ t.label }}</button></li>
+        {% endfor %}
+      </menu>
       <span class="hint">Drag on the canvas to multi-select · ⌫ deletes selection</span>
     </div>
   </header>
