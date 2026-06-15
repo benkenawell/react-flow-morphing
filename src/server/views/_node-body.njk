@@ -1,0 +1,21 @@
+{# Server-rendered node body, projected into React Flow via the named slot.
+   htmx controls INSIDE here run in light DOM and target #graph with a morph swap. #}
+<div class="card card--{{ n.data.status }}">
+  <div class="card__head">
+    <strong>{{ n.data.title }}</strong>
+    <span class="badge">{{ n.data.status }}</span>
+  </div>
+  <div class="card__amount">{{ n.data.amount }}</div>
+  <div class="card__actions">
+    <button type="button"
+      hx-get="/nodes/{{ n.id }}/panel" hx-target="#inspector" hx-swap="innerHTML">
+      Inspect
+    </button>
+    {% if n.data.status == 'pending' %}
+    <button type="button"
+      hx-post="/orders/{{ n.id }}/approve" hx-target="#graph" hx-swap="morph:innerHTML">
+      Approve
+    </button>
+    {% endif %}
+  </div>
+</div>

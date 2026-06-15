@@ -1,0 +1,22 @@
+{# The whole-graph fragment: the light-DOM model of <react-flow>. Returned by
+   every action route and morphed into #graph. Stable ids let idiomorph diff.
+
+   NOTE: a named <slot> only projects DIRECT children of the shadow host
+   (<react-flow>). So each <flow-node> is itself a direct child and carries
+   slot="node-{id}"; React Flow's card node renders <slot name="node-{id}"> to
+   project the whole element (body included) into the rendered node. #}
+{% for a in actions -%}
+<flow-action on="{{ a.on }}" hx-{{ a.method }}="{{ a.url }}"></flow-action>
+{% endfor -%}
+
+{% for n in nodes -%}
+<flow-node id="{{ n.id }}" type="{{ n.type }}" x="{{ n.x }}" y="{{ n.y }}" slot="node-{{ n.id }}">
+  {% include "_node-body.njk" %}
+</flow-node>
+{% endfor -%}
+
+{% for e in edges -%}
+<flow-edge id="{{ e.id }}" source="{{ e.source }}" target="{{ e.target }}"
+  {%- if e.sourceHandle %} source-handle="{{ e.sourceHandle }}"{% endif %}
+  {%- if e.targetHandle %} target-handle="{{ e.targetHandle }}"{% endif %}></flow-edge>
+{% endfor -%}

@@ -1,0 +1,26 @@
+{
+  "name": "react-flow-morphing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Server-driven React Flow via web component + htmx + idiomorph",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "node scripts/build.js --watch & node --watch src/server/server.js",
+    "start": "npm run build && node src/server/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.3.5",
+    "express": "^4.21.1",
+    "htmx.org": "^2.0.3",
+    "idiomorph": "^0.3.0",
+    "nunjucks": "^3.2.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "linkedom": "^0.18.5"
+  }
+}

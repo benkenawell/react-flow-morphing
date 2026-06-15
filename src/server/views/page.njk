@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Server-Driven React Flow</title>
+  <style>
+    body { margin: 0; font: 14px/1.4 system-ui, sans-serif; color: #111; }
+    header { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
+    header h1 { font-size: 16px; margin: 0; }
+    header p { margin: 4px 0 0; color: #6b7280; }
+    main { display: grid; grid-template-columns: 1fr 280px; gap: 0; height: calc(100vh - 64px); }
+    react-flow { display: block; width: 100%; height: 100%; }
+    /* <flow-node> is projected into React Flow via a slot; metadata elements stay hidden. */
+    flow-node { display: block; }
+    flow-action, flow-edge { display: none; }
+    #inspector { border-left: 1px solid #e5e7eb; padding: 16px; overflow: auto; }
+    #inspector:empty::before { content: "Click a node to inspect"; color: #9ca3af; }
+
+    /* Node bodies live in light DOM (projected through a slot), so document CSS styles them. */
+    .card { width: 180px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px;
+            background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+    .card--approved { border-color: #16a34a; }
+    .card--pending { border-color: #d97706; }
+    .card__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .card__amount { color: #6b7280; margin: 4px 0 8px; }
+    .card__actions { display: flex; gap: 6px; }
+    .card__actions button { font: inherit; padding: 2px 8px; border: 1px solid #d1d5db;
+            border-radius: 6px; background: #f9fafb; cursor: pointer; }
+    .badge { font-size: 11px; text-transform: uppercase; letter-spacing: .03em;
+            padding: 1px 6px; border-radius: 999px; background: #f3f4f6; color: #374151; }
+    .card--approved .badge { background: #dcfce7; color: #166534; }
+    .card--pending .badge { background: #fef3c7; color: #92400e; }
+  </style>
+  <!-- htmx + the idiomorph swap extension (registers hx-swap="morph:*") -->
+  <script src="/vendor/htmx.min.js"></script>
+  <script src="/vendor/idiomorph-ext.min.js"></script>
+  <!-- the React Flow web component bundle -->
+  <script type="module" src="/flow-component.js"></script>
+</head>
+<body hx-ext="morph">
+  <header>
+    <h1>Server-Driven React Flow</h1>
+    <p>React Flow in a web component. Server owns state; htmx + idiomorph morph the graph.</p>
+  </header>
+  <main>
+    <react-flow id="graph">
+      {% include "_graph.njk" %}
+    </react-flow>
+    <aside id="inspector"></aside>
+  </main>
+</body>
+</html>
