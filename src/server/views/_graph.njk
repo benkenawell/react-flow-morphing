@@ -6,7 +6,9 @@
    slot="node-{id}"; React Flow's card node renders <slot name="node-{id}"> to
    project the whole element (body included) into the rendered node. #}
 {% for a in actions -%}
-<flow-action on="{{ a.on }}" hx-{{ a.method }}="{{ a.url }}"></flow-action>
+<flow-action on="{{ a.on }}" hx-{{ a.method }}="{{ a.url }}"
+  {%- if a.target %} hx-target="{{ a.target }}"{% endif %}
+  {%- if a.swap %} hx-swap="{{ a.swap }}"{% endif %}></flow-action>
 {% endfor -%}
 
 {% for n in nodes -%}

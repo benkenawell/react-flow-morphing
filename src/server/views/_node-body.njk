@@ -1,21 +1,21 @@
 {# Server-rendered node body, projected into React Flow via the named slot.
-   htmx controls INSIDE here run in light DOM and target #graph with a morph swap. #}
-<div class="card card--{{ n.data.status }}">
+   The whole card is the inspector trigger — handled by htmx in LIGHT DOM, because
+   React Flow's onNodeClick (a React synthetic event) can't see clicks on slotted
+   content across the shadow boundary. htmx controls here run in light DOM. #}
+<div class="card card--{{ n.data.status }}"
+  hx-get="/nodes/{{ n.id }}/panel" hx-target="#inspector" hx-swap="innerHTML">
   <div class="card__head">
     <strong>{{ n.data.title }}</strong>
     <span class="badge">{{ n.data.status }}</span>
   </div>
   <div class="card__amount">{{ n.data.amount }}</div>
+  {% if n.data.status == 'pending' %}
   <div class="card__actions">
-    <button type="button"
-      hx-get="/nodes/{{ n.id }}/panel" hx-target="#inspector" hx-swap="innerHTML">
-      Inspect
-    </button>
-    {% if n.data.status == 'pending' %}
-    <button type="button"
+    {# `consume` stops this click from also bubbling to the card's inspector trigger. #}
+    <button type="button" hx-trigger="click consume"
       hx-post="/orders/{{ n.id }}/approve" hx-target="#graph" hx-swap="morph:innerHTML">
       Approve
     </button>
-    {% endif %}
   </div>
+  {% endif %}
 </div>

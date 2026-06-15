@@ -47,7 +47,10 @@ export function FlowCanvas({ version, nodes: propNodes, edges: propEdges, emit }
           targetHandle: c.targetHandle || '',
         })
       }
-      onNodeClick={(_e, node) => emit('nodeClick', { id: node.id })}
+      // No onNodeClick: it's a React synthetic event and never fires for clicks on
+      // slotted (light-DOM) node bodies across the shadow boundary. The whole-card
+      // inspector trigger is plain htmx in _node-body.njk. (Edges ARE React-rendered
+      // in the shadow tree, so onEdgeClick works.)
       onEdgeClick={(_e, edge) => emit('edgeClick', { id: edge.id })}
       onNodesDelete={(deleted) => deleted.forEach((n) => emit('nodesDelete', { id: n.id }))}
       onEdgesDelete={(deleted) => deleted.forEach((e) => emit('edgesDelete', { id: e.id }))}

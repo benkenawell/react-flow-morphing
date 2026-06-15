@@ -77,7 +77,14 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
   `id`s to minimize the mutation. New node types: add a branch in `_node-body.njk` and register the
   React component in `node-types.jsx`.
 - New interaction events: add a `<flow-action on="...">` (in `actions.js`) + a `case` in `bridge.js` +
-  the React Flow handler in `canvas.jsx`.
+  the React Flow handler in `canvas.jsx`. **Caveat:** this only works for React Flow events backed by
+  *native* listeners (drag, connect, delete) — they cross the shadow/slot boundary. React *synthetic*
+  events like `onNodeClick` do **not** fire for clicks on slotted (light-DOM) node bodies, because React
+  resolves the target fiber via the real `parentNode` chain, which for projected content never enters
+  React's shadow tree. So **interactions on a node's body must be plain htmx in light DOM** (see the
+  whole-card inspector trigger in `_node-body.njk`), not a flow-action.
+- Nested htmx triggers: a click on a control inside the card (e.g. Approve) also bubbles to the card's
+  own `hx-get`. Add `hx-trigger="click consume"` to the inner control to stop that.
 - React Flow CSS is injected into the shadow root (`styles.js`, imported as text by esbuild's `.css` loader).
 - **Editable fields** are plain htmx forms in the inspector (light DOM) that POST to `/nodes/:id/data`;
   the response morphs `#graph` (so the node card updates) and refreshes `#inspector` out-of-band. Add a

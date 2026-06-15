@@ -32,6 +32,11 @@ test('GET / renders the full page with the web component and graph', async () =>
   assert.match(html, /flow-component\.js/);
   assert.match(html, /hx-ext="morph"/);
   assert.match(html, /<flow-node id="order-42"[^>]*slot="node-order-42"/);
+  // whole card is the inspector trigger (htmx in light DOM); no Inspect button,
+  // and node click is NOT a flow-action (onNodeClick can't cross the shadow boundary)
+  assert.match(html, /<div class="card[^"]*"\s+hx-get="\/nodes\/order-42\/panel" hx-target="#inspector"/);
+  assert.doesNotMatch(html, />\s*Inspect\s*</);
+  assert.doesNotMatch(html, /<flow-action on="nodeClick"/);
 });
 
 test('POST /nodes/move returns the WHOLE graph with updated coords', async () => {
