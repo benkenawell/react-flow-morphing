@@ -34,6 +34,11 @@ export function createApp({ store = createStore(defaultSeed()) } = {}) {
     res.type('html').send(renderGraph());
   }));
 
+  app.post('/nodes/create', wrap((req, res) => {
+    store.addNode({ type: req.body.type || 'card' });
+    res.type('html').send(renderGraph());
+  }));
+
   app.post('/edges/create', wrap((req, res) => {
     store.addEdge({
       source: req.body.source,

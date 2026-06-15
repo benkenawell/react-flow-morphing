@@ -16,9 +16,19 @@ class ReactFlowElement extends HTMLElement {
   #version = 0;
   #actions = [];
   #scheduled = false;
+  // Serializes outgoing requests so their whole-graph responses morph IN ORDER.
+  // Without this, concurrent actions (multi-delete, drag-while-saving, the edge
+  // deletes React Flow fires alongside a node delete) race and the last response
+  // to land wins — which can resurrect already-deleted state.
+  #queue = Promise.resolve();
 
   connectedCallback() {
-    const shadow = this.attachShadow({ mode: 'open' });
+    // connectedCallback can fire again after a disconnect/reconnect; attachShadow
+    // throws if a root already exists, so reuse it. Rebuild the style + mount each
+    // time so React's createRoot always gets a clean container (the prior root, if
+    // any, was unmounted in disconnectedCallback).
+    const shadow = this.shadowRoot ?? this.attachShadow({ mode: 'open' });
+    shadow.replaceChildren();
 
     const style = document.createElement('style');
     style.textContent = shadowCss;
@@ -60,6 +70,11 @@ class ReactFlowElement extends HTMLElement {
     const { nodes, edges, actions } = elementsToFlow(this.children);
     this.#actions = actions;
     this.#version += 1;
+    // idiomorph PRESERVES existing elements (so their htmx bindings survive a
+    // morph) but ADDED nodes are fresh DOM htmx has never seen — e.g. a new
+    // node's Inspect button. Re-process the light DOM so those controls work
+    // without a page reload. htmx.process is idempotent on already-bound nodes.
+    window.htmx?.process(this);
     this.#root.render(
       <StrictMode>
         <ReactFlowProvider>
@@ -85,12 +100,18 @@ class ReactFlowElement extends HTMLElement {
       console.warn('[react-flow] htmx not loaded; cannot emit', eventName);
       return;
     }
-    htmx.ajax(action.method.toUpperCase(), url, {
-      source: this,
-      target: action.target,
-      swap: action.swap,
-      values: params,
-    });
+    // Chain onto the queue so each whole-graph response morphs before the next
+    // request fires — responses then apply in the order the actions happened.
+    this.#queue = this.#queue
+      .then(() =>
+        htmx.ajax(action.method.toUpperCase(), url, {
+          source: this,
+          target: action.target,
+          swap: action.swap,
+          values: params,
+        }),
+      )
+      .catch((err) => console.warn('[react-flow] emit failed', eventName, err));
   }
 }
 

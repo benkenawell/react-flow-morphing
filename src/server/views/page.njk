@@ -6,9 +6,14 @@
   <title>Server-Driven React Flow</title>
   <style>
     body { margin: 0; font: 14px/1.4 system-ui, sans-serif; color: #111; }
-    header { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
+    header { padding: 12px 16px; border-bottom: 1px solid #e5e7eb;
+             display: flex; align-items: center; justify-content: space-between; gap: 16px; }
     header h1 { font-size: 16px; margin: 0; }
     header p { margin: 4px 0 0; color: #6b7280; }
+    .toolbar { display: flex; align-items: center; gap: 12px; }
+    .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid #2563eb;
+             background: #2563eb; color: #fff; border-radius: 6px; cursor: pointer; }
+    .toolbar .hint { font-size: 12px; color: #9ca3af; }
     main { display: grid; grid-template-columns: 1fr 280px; gap: 0; height: calc(100vh - 64px); }
     react-flow { display: block; width: 100%; height: 100%; }
     /* <flow-node> is projected into React Flow via a slot; metadata elements stay hidden. */
@@ -47,8 +52,16 @@
 </head>
 <body hx-ext="morph">
   <header>
-    <h1>Server-Driven React Flow</h1>
-    <p>React Flow in a web component. Server owns state; htmx + idiomorph morph the graph.</p>
+    <div>
+      <h1>Server-Driven React Flow</h1>
+      <p>React Flow in a web component. Server owns state; htmx + idiomorph morph the graph.</p>
+    </div>
+    <div class="toolbar">
+      <button type="button" hx-post="/nodes/create" hx-target="#graph" hx-swap="morph:innerHTML">
+        + Add node
+      </button>
+      <span class="hint">Drag on the canvas to multi-select · ⌫ deletes selection</span>
+    </div>
   </header>
   <main>
     <react-flow id="graph">

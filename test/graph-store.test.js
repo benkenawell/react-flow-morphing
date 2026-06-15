@@ -17,6 +17,24 @@ test('moveNode updates coordinates as numbers', () => {
   assert.deepEqual([node.x, node.y], [40, 55]);
 });
 
+test('addNode creates a unique node with defaults', () => {
+  const store = createStore(seed());
+  const a = store.addNode();
+  const b = store.addNode();
+  assert.notEqual(a.id, b.id);
+  assert.equal(a.type, 'card');
+  assert.equal(a.data.status, 'new');
+  assert.equal(store.toViewModel().nodes.length, 4);
+});
+
+test('addNode never collides with existing ids', () => {
+  // Seed already holds an id in the generator's namespace.
+  const store = createStore({ nodes: [{ id: 'node-1', x: 0, y: 0, data: {} }], edges: [] });
+  const created = store.addNode();
+  assert.notEqual(created.id, 'node-1');
+  assert.equal(store.nodes.has(created.id), true);
+});
+
 test('moveNode on missing node throws NotFound', () => {
   const store = createStore(seed());
   assert.throws(() => store.moveNode('nope', 1, 2), NotFound);

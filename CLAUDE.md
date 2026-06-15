@@ -54,13 +54,18 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
   idiomorph does the diffing. `createApp({store})` is exported separately from `server.js` so tests bind
   an ephemeral port.
 - `src/server/actions.js` — the `<flow-action>` wiring (event name → endpoint), rendered into the graph.
-- `src/server/views/` — `page.njk` (shell; card CSS lives here since slotted bodies are styled by
-  *document* CSS, not shadow CSS), `_graph.njk`, `_node-body.njk`, `_inspector.njk` (editable form),
-  `_graph-oob-inspector.njk` (edit response: graph + OOB inspector refresh).
+- `src/server/views/` — `page.njk` (shell + header toolbar whose "Add node" button is light-DOM htmx
+  posting to `/nodes/create`; card CSS lives here since slotted bodies are styled by *document* CSS, not
+  shadow CSS), `_graph.njk`, `_node-body.njk`, `_inspector.njk` (editable form), `_graph-oob-inspector.njk`
+  (edit response: graph + OOB inspector refresh).
 - `src/client/model.js` + `bridge.js` — **pure, browser-free** (tested with linkedom). model = light DOM →
   React Flow inputs; bridge = React Flow event → htmx params + `{id}` URL substitution.
 - `src/client/react-flow.element.jsx` — the custom element (shadow root, React root, observer, `#emit`).
 - `src/client/canvas.jsx` / `node-types.jsx` — controlled React Flow + the slot-rendering `CardNode`.
+  Canvas also configures multi-select (`selectionOnDrag`; pan via middle/right mouse or scroll) and a
+  `SelectionTools` panel (count + bulk delete). Selection is **client-side only** — it never hits the
+  server; only the resulting deletes do, via the existing `nodesDelete` path. The panel renders in the
+  shadow root, so its CSS lives in `styles.js` (`shadowCss`), not `page.njk`.
 
 ## Conventions / gotchas
 
@@ -77,6 +82,16 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
 - **Editable fields** are plain htmx forms in the inspector (light DOM) that POST to `/nodes/:id/data`;
   the response morphs `#graph` (so the node card updates) and refreshes `#inspector` out-of-band. Add a
   new editable field by adding the input to `_inspector.njk` and the key to the route's allowlist in `app.js`.
+- **OOB swaps must use a `morph` style.** Because `hx-ext="morph"` is on `<body>`, the idiomorph
+  extension intercepts every OOB swap, and its `isInlineSwap()` throws on non-morph styles like
+  `innerHTML` (`Cannot read properties of undefined (reading 'swapStyle')`). Use `hx-swap-oob="morph"`
+  and make the OOB element's tag match the real element (it morphs *outerHTML* in place) — see
+  `_graph-oob-inspector.njk`. Don't write `morph:innerHTML` in `hx-swap-oob`: the `:` collides with the
+  OOB `style:selector` syntax.
+- **New controls added by a morph need re-processing.** idiomorph preserves existing elements (their
+  htmx bindings survive) but *added* nodes are fresh DOM htmx never saw, so their hx-* controls (e.g. a
+  new node's Inspect button) won't fire until processed. `react-flow.element.jsx` `#render()` calls
+  `window.htmx.process(this)` after every morph to bind them (idempotent on already-bound nodes).
 
 ## Verification beyond tests
 

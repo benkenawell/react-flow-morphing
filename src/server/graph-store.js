@@ -10,6 +10,25 @@ export function createStore(seed = defaultSeed()) {
   /** @type {Map<string, Edge>} */
   const edges = new Map(seed.edges.map((e) => [e.id, { ...e }]));
   let edgeSeq = edges.size;
+  let nodeSeq = nodes.size;
+
+  // Create a node with a unique id, defaulting position/data for a blank card.
+  function addNode({ type = 'card', x, y, data = {} } = {}) {
+    let n = ++nodeSeq;
+    let id = `node-${n}`;
+    while (nodes.has(id)) id = `node-${(n = ++nodeSeq)}`;
+    // Stagger placement so repeated adds don't stack exactly.
+    const offset = ((n - 1) % 6) * 28;
+    const node = normalizeNode({
+      id,
+      x: x ?? 80 + offset,
+      y: y ?? 120 + offset,
+      type,
+      data: { title: `Node ${n}`, status: 'new', amount: '—', ...data },
+    });
+    nodes.set(id, node);
+    return node;
+  }
 
   function moveNode(id, x, y) {
     const node = nodes.get(id);
@@ -61,6 +80,7 @@ export function createStore(seed = defaultSeed()) {
   return {
     nodes,
     edges,
+    addNode,
     moveNode,
     addEdge,
     setNodeData,

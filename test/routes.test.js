@@ -49,6 +49,18 @@ test('POST /nodes/move returns the WHOLE graph with updated coords', async () =>
   assert.match(html, /<flow-action on="nodeDragStop"/);
 });
 
+test('POST /nodes/create adds a node and returns the full graph', async () => {
+  const before = (await (await fetch(`${base}/`)).text()).match(/<flow-node /g).length;
+  const res = await fetch(`${base}/nodes/create`, { method: 'POST' });
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  const after = html.match(/<flow-node /g).length;
+  assert.equal(after, before + 1);
+  // new node is a projectable direct child (carries its slot) and existing nodes remain
+  assert.match(html, /<flow-node id="node-\d+"[^>]*slot="node-node-\d+"/);
+  assert.match(html, /<flow-node id="order-42"/);
+});
+
 test('POST /edges/create adds an edge and echoes the full graph', async () => {
   const res = await fetch(`${base}/edges/create`, {
     method: 'POST',
@@ -78,8 +90,8 @@ test('POST /nodes/:id/data edits fields; updates card + OOB inspector', async ()
   // node card (in the morphed graph) reflects the new title/amount
   assert.match(html, /Order #42 \(edited\)/);
   assert.match(html, /\$9\.99/);
-  // out-of-band inspector refresh is included, pre-filled with the saved value
-  assert.match(html, /id="inspector" hx-swap-oob="innerHTML"/);
+  // out-of-band inspector refresh is included (morph OOB), pre-filled with the saved value
+  assert.match(html, /<aside id="inspector" hx-swap-oob="morph">/);
   assert.match(html, /value="Order #42 \(edited\)"/);
 });
 
