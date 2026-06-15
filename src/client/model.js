@@ -14,15 +14,17 @@ export function elementsToFlow(children) {
 
   for (const el of children) {
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'flow-node') nodes.push(toNode(el));
-    else if (tag === 'flow-edge') edges.push(toEdge(el));
-    else if (tag === 'flow-action') actions.push(toAction(el));
+    // Upgraded custom elements expose toModel() (one schema, no drift); plain
+    // elements (and linkedom stubs in tests) fall back to attribute parsing.
+    if (tag === 'flow-node') nodes.push(el.toModel ? el.toModel() : toNode(el));
+    else if (tag === 'flow-edge') edges.push(el.toModel ? el.toModel() : toEdge(el));
+    else if (tag === 'flow-action') actions.push(el.toModel ? el.toModel() : toAction(el));
   }
 
   return { nodes, edges, actions };
 }
 
-function toNode(el) {
+export function toNode(el) {
   const id = el.getAttribute('id');
   const node = {
     id,
@@ -34,7 +36,7 @@ function toNode(el) {
   return node;
 }
 
-function toEdge(el) {
+export function toEdge(el) {
   const edge = {
     id: el.getAttribute('id'),
     source: el.getAttribute('source'),
@@ -47,7 +49,7 @@ function toEdge(el) {
   return edge;
 }
 
-function toAction(el) {
+export function toAction(el) {
   const action = { on: el.getAttribute('on'), method: 'get', url: null };
   for (const method of HX_METHODS) {
     const url = el.getAttribute(`hx-${method}`);
@@ -65,4 +67,26 @@ function toAction(el) {
 function num(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
+}
+
+// --- Validation (pure; used by the custom elements in flow-elements.js) -----------
+export function nodeIssues(el) {
+  const issues = [];
+  if (!el.getAttribute('id')) issues.push('missing required attribute "id"');
+  return issues;
+}
+
+export function edgeIssues(el) {
+  const issues = [];
+  for (const attr of ['id', 'source', 'target']) {
+    if (!el.getAttribute(attr)) issues.push(`missing required attribute "${attr}"`);
+  }
+  return issues;
+}
+
+export function actionIssues(el) {
+  const issues = [];
+  if (!el.getAttribute('on')) issues.push('missing required attribute "on"');
+  if (!toAction(el).url) issues.push('missing an hx-get/hx-post/… endpoint');
+  return issues;
 }

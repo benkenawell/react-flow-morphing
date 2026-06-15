@@ -12,10 +12,14 @@ import { shadowCss } from './styles.js';
 // React never fight.
 class ReactFlowElement extends HTMLElement {
   #root = null;
-  #observer = null;
   #version = 0;
   #actions = [];
   #scheduled = false;
+  #onFlowChanged = () => this.#scheduleRender();
+  // idiomorph adds fresh DOM htmx hasn't bound (a new node's Inspect trigger, a
+  // newly-shown Approve button). Every graph morph is an htmx swap targeting
+  // #graph (= this), so re-process this subtree after each swap. Idempotent.
+  #onAfterSwap = () => window.htmx?.process(this);
   // Serializes outgoing requests so their whole-graph responses morph IN ORDER.
   // Without this, concurrent actions (multi-delete, drag-while-saving, the edge
   // deletes React Flow fires alongside a node delete) race and the last response
@@ -40,15 +44,18 @@ class ReactFlowElement extends HTMLElement {
 
     this.#root = createRoot(mount);
 
-    // Re-derive the model whenever the light DOM changes (htmx/idiomorph morphs).
-    this.#observer = new MutationObserver(() => this.#scheduleRender());
-    this.#observer.observe(this, { childList: true, subtree: true, attributes: true });
+    // Precise signals instead of a catch-all observer: the <flow-*> children fire
+    // `flow:changed` when the graph model changes (so an in-body morph like a status
+    // badge does NOT re-render the canvas), and htmx's own afterSwap drives binding.
+    this.addEventListener('flow:changed', this.#onFlowChanged);
+    this.addEventListener('htmx:afterSwap', this.#onAfterSwap);
 
     this.#render();
   }
 
   disconnectedCallback() {
-    this.#observer?.disconnect();
+    this.removeEventListener('flow:changed', this.#onFlowChanged);
+    this.removeEventListener('htmx:afterSwap', this.#onAfterSwap);
     // Defer unmount out of React's commit phase.
     const root = this.#root;
     this.#root = null;
@@ -70,11 +77,6 @@ class ReactFlowElement extends HTMLElement {
     const { nodes, edges, actions } = elementsToFlow(this.children);
     this.#actions = actions;
     this.#version += 1;
-    // idiomorph PRESERVES existing elements (so their htmx bindings survive a
-    // morph) but ADDED nodes are fresh DOM htmx has never seen — e.g. a new
-    // node's Inspect button. Re-process the light DOM so those controls work
-    // without a page reload. htmx.process is idempotent on already-bound nodes.
-    window.htmx?.process(this);
     this.#root.render(
       <StrictMode>
         <ReactFlowProvider>
@@ -117,6 +119,6 @@ class ReactFlowElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('react-flow')) {
-  customElements.define('react-flow', ReactFlowElement);
+export function defineReactFlow() {
+  if (!customElements.get('react-flow')) customElements.define('react-flow', ReactFlowElement);
 }

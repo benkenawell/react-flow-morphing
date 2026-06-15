@@ -39,7 +39,9 @@ Flow of one action (e.g. drag):
 3. Express mutates the in-memory `graph-store`, re-renders **the entire graph** (`_graph.njk`).
 4. **idiomorph** morphs that whole fragment into `#graph`'s light DOM, matching `<flow-node>` by stable
    `id` so only changed nodes mutate (untouched DOM identity preserved).
-5. The element's `MutationObserver` fires → `elementsToFlow()` re-derives the model → React reconciles.
+5. The morphed `<flow-*>` children fire a bubbling `flow:changed` → the host re-derives via
+   `elementsToFlow()` → React reconciles. (And `htmx:afterSwap` on the host → `htmx.process(this)` to
+   bind any idiomorph-added controls.)
 
 Node bodies are **server HTML projected through a named `<slot>`**: each `<flow-node>` is a *direct*
 child of `<react-flow>` carrying `slot="node-{id}"` (slots only project direct host children), and the
@@ -59,8 +61,17 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
   shadow CSS), `_graph.njk`, `_node-body.njk`, `_inspector.njk` (editable form), `_graph-oob-inspector.njk`
   (edit response: graph + OOB inspector refresh).
 - `src/client/model.js` + `bridge.js` — **pure, browser-free** (tested with linkedom). model = light DOM →
-  React Flow inputs; bridge = React Flow event → htmx params + `{id}` URL substitution.
-- `src/client/react-flow.element.jsx` — the custom element (shadow root, React root, observer, `#emit`).
+  React Flow inputs (`elementsToFlow` prefers `el.toModel()`, falls back to attribute parsing) + the pure
+  `*Issues` validators; bridge = React Flow event → htmx params + `{id}` URL substitution.
+- `src/client/flow-elements.js` — `<flow-node>`/`<flow-edge>`/`<flow-action>` as **custom elements**:
+  typed/reflected attributes, validation (`console.warn` on a bad/missing attr — non-throwing), and a
+  bubbling-to-host `flow:changed` on connect/disconnect/observed-attr-change. They're **data carriers
+  only** — they never touch React; the host reads them. Parsing/validation is delegated to `model.js`
+  (one schema; importable in node:test without DOM globals, since these classes `extends HTMLElement`).
+- `src/client/react-flow.element.jsx` — the host custom element (shadow root, React root, `#emit`,
+  request `#queue`). Listens for `flow:changed` (re-derive/re-render — so in-body morphs like a status
+  badge no longer re-render the canvas) and `htmx:afterSwap` (→ `htmx.process(this)`). `index.js` defines
+  the data carriers **before** the host so the first render sees upgraded children.
 - `src/client/canvas.jsx` / `node-types.jsx` — controlled React Flow + the slot-rendering `CardNode`.
   Canvas also configures multi-select (`selectionOnDrag`; pan via middle/right mouse or scroll) and a
   `SelectionTools` panel (count + bulk delete). Selection is **client-side only** — it never hits the
