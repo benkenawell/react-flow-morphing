@@ -4,13 +4,15 @@ Server-driven React Flow. The **server owns graph state** and drives the UI with
 (htmx + idiomorph). React Flow is wrapped in a `<react-flow>` web component whose **light-DOM children
 are the declarative graph**; node bodies are server HTML projected through slots.
 
+![Server-Driven React Flow — typed nodes (order/shipping/invoice), an edited inspector panel, and the add-node popover](docs/screenshot.png)
+
 ```
 React Flow event (shadow DOM)
    → <flow-action> endpoint via htmx.ajax
    → Express mutates in-memory store
    → renders the WHOLE graph fragment
    → idiomorph morphs it into light DOM (diffs by id)
-   → MutationObserver → React Flow reconciles
+   → <flow-*> elements fire flow:changed → React Flow reconciles
 ```
 
 Light DOM = server truth + htmx. Shadow DOM = React Flow, which only *reads* the children and *emits*
