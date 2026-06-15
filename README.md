@@ -1,10 +1,14 @@
+
+
+
 # react-flow-morphing
 
 Server-driven React Flow. The **server owns graph state** and drives the UI with HTML over the wire
 (htmx + idiomorph). React Flow is wrapped in a `<react-flow>` web component whose **light-DOM children
 are the declarative graph**; node bodies are server HTML projected through slots.
 
-![Server-Driven React Flow — typed nodes (order/shipping/invoice), an edited inspector panel, and the add-node popover](docs/screenshot.png)
+
+https://github.com/user-attachments/assets/7b24b90d-8232-4035-8b4d-c366c6e751e3
 
 ```
 React Flow event (shadow DOM)
@@ -53,3 +57,6 @@ pnpm test           # node --test
 - `{id}` in a `<flow-action>` URL is substituted from the event's node/edge id.
 
 See `CLAUDE.md` for architecture details and extension points.
+
+
+![Server-Driven React Flow — typed nodes (order/shipping/invoice), an edited inspector panel, and the add-node popover](docs/screenshot.png)
