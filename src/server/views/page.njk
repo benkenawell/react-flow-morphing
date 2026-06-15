@@ -20,7 +20,7 @@
     flow-node { display: block; }
     flow-action, flow-edge { display: none; }
     #inspector { border-left: 1px solid #e5e7eb; padding: 16px; overflow: auto; }
-    #inspector:empty::before { content: "Click a node to inspect"; color: #9ca3af; }
+    .inspector-placeholder { color: #9ca3af; }
     .inspector-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
     .inspector-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #6b7280; }
     .inspector-form input, .inspector-form select { font: inherit; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; }
@@ -70,10 +70,19 @@
     </div>
   </header>
   <main>
-    <react-flow id="graph">
+    {# hx-include carries the open inspector's node id (a hidden input it renders)
+       into every flow request, so the server can OOB-refresh the panel when relevant.
+       Targets the specific id, not #inspector, to avoid sweeping in the form fields. #}
+    <react-flow id="graph" hx-include="#inspector-open">
       {% include "_graph.njk" %}
     </react-flow>
-    <aside id="inspector"></aside>
+    {# Seed the hx-include marker (empty) so #inspector-open ALWAYS exists — an
+       hx-include selector that matches nothing makes htmx log an error. Opening a
+       panel replaces this whole subtree with one carrying the node id. #}
+    <aside id="inspector">
+      <input id="inspector-open" type="hidden" name="inspectorNode" value="" />
+      <p class="inspector-placeholder">Click a node to inspect</p>
+    </aside>
   </main>
 </body>
 </html>

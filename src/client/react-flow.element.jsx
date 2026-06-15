@@ -102,6 +102,8 @@ class ReactFlowElement extends HTMLElement {
     }
     // Chain onto the queue so each whole-graph response morphs before the next
     // request fires — responses then apply in the order the actions happened.
+    // `source: this` lets htmx honor the host's hx-include (e.g. the open
+    // inspector's node id) declaratively — no per-action JS here.
     this.#queue = this.#queue
       .then(() =>
         htmx.ajax(action.method.toUpperCase(), url, {

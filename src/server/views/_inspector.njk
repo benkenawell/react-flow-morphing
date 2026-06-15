@@ -4,6 +4,11 @@
    mutates the store, and the WHOLE graph morphs so the node card updates live. #}
 <h2 style="margin-top:0">{{ node.data.title }}</h2>
 
+{# Marks which node's inspector is open. <react-flow hx-include="#inspector-open">
+   pulls this into every flow request, so the move route knows whether to OOB-update
+   the Position below. Present only while a panel is open; no server state needed. #}
+<input id="inspector-open" type="hidden" name="inspectorNode" value="{{ node.id }}" />
+
 <form class="inspector-form"
   hx-post="/nodes/{{ node.id }}/data" hx-target="#graph" hx-swap="morph:innerHTML">
   <label>Title
@@ -24,5 +29,6 @@
 
 <dl class="inspector-meta">
   <dt>ID</dt><dd>{{ node.id }}</dd>
-  <dt>Position</dt><dd>{{ node.x }}, {{ node.y }}</dd>
+  {# Node-keyed span so a move can OOB-update just this when the panel is open. #}
+  <dt>Position</dt><dd><span id="inspector-position-{{ node.id }}">{{ node.x }}, {{ node.y }}</span></dd>
 </dl>

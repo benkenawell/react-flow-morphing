@@ -1,0 +1,8 @@
+{# Move response: the whole graph (morphed into #graph) plus an out-of-band update
+   of the moved node's Position span. htmx matches the OOB by id — if the inspector
+   is open for this node the span exists and morphs in place; otherwise there's no
+   target and htmx silently drops it (no console error). Must be hx-swap-oob="morph"
+   (idiomorph's extension throws on non-morph OOB styles), tag/id matching the span
+   in _inspector.njk so its outerHTML morphs cleanly. #}
+{% include "_graph.njk" %}
+<span id="inspector-position-{{ node.id }}" hx-swap-oob="morph">{{ node.x }}, {{ node.y }}</span>

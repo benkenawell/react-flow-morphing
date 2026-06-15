@@ -89,6 +89,26 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
 - **Editable fields** are plain htmx forms in the inspector (light DOM) that POST to `/nodes/:id/data`;
   the response morphs `#graph` (so the node card updates) and refreshes `#inspector` out-of-band. Add a
   new editable field by adding the input to `_inspector.njk` and the key to the route's allowlist in `app.js`.
+- **Live cross-panel updates via id-targeted OOB.** A drag starts on the canvas, but its `POST /nodes/move`
+  response can also carry an OOB `<span id="inspector-position-{id}" hx-swap-oob="morph">` (see
+  `_graph-oob-position.njk`) to update the inspector's Position. **Gotcha:** an OOB whose id has no match
+  in the DOM makes htmx log an `htmx:oobErrorNoTarget` **console.error** — and it's unsuppressable (htmx
+  logs in `triggerEvent` *before* dispatching the event, so no listener can stop it). So you can't just
+  "always emit the OOB and let id-matching decide" — the server must omit the OOB unless the panel is
+  open for that node. That "is it open?" signal is carried **declaratively, not in JS**: the inspector
+  panel renders a hidden `<input id="inspector-open" name="inspectorNode" value="{id}">`, and
+  `<react-flow hx-include="#inspector-open">` makes htmx pull it into every flow request (the bridge
+  passes the host as the htmx `source`, so its `hx-include` is honored — htmx.js:3638/4074). The move
+  route OOB-updates Position only when `req.body.inspectorNode === movedId`. **No server state** (the
+  open-node id lives in the DOM and rides along per-request) and **no per-action client JS**. Note: an
+  `hx-include` selector that matches **zero** elements makes htmx `logError` ("returned no matches!",
+  htmx.js:1372), so the marker must ALWAYS exist — `page.njk` seeds an empty `#inspector-open` in
+  `#inspector` (replaced by the node-valued one when a panel opens), and the "Click a node" placeholder
+  is server-rendered (`.inspector-placeholder`) rather than CSS `:empty` (the seed makes it non-empty).
+  General pattern for
+  "update another panel iff it's showing the affected entity": panel renders a hidden marker → host
+  `hx-include` carries it → server compares and conditionally OOBs. Use a `<span>` (not `<dd>`/`<td>`
+  etc.) for the OOB target so the standalone fragment isn't dropped by context-sensitive HTML parsing.
 - **Node status** is an enum in `src/server/statuses.js` (`STATUSES` / `isStatus`) — the single source
   of truth for the inspector's `<select>` (exposed to all templates via `env.addGlobal('statuses', …)`),
   the route's validation, and the `.card--{status}` CSS in `page.njk`. Add a status in all three when

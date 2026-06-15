@@ -28,7 +28,10 @@ test('GET / renders the full page with the web component and graph', async () =>
   const res = await fetch(`${base}/`);
   assert.equal(res.status, 200);
   const html = await res.text();
-  assert.match(html, /<react-flow id="graph">/);
+  assert.match(html, /<react-flow id="graph" hx-include="#inspector-open">/);
+  // the hx-include marker exists even with no panel open (empty), so htmx never
+  // logs a "selector returned no matches" error
+  assert.match(html, /<input id="inspector-open" type="hidden" name="inspectorNode" value=""/);
   assert.match(html, /flow-component\.js/);
   assert.match(html, /hx-ext="morph"/);
   assert.match(html, /<flow-node id="order-42"[^>]*slot="node-order-42"/);
@@ -52,6 +55,30 @@ test('POST /nodes/move returns the WHOLE graph with updated coords', async () =>
   // ...and the full list is returned (other node + actions present)
   assert.match(html, /<flow-node id="ship-7"/);
   assert.match(html, /<flow-action on="nodeDragStop"/);
+  // inspector not open -> no OOB position update (avoids htmx no-target error)
+  assert.doesNotMatch(html, /hx-swap-oob/);
+});
+
+test('POST /nodes/move OOB-updates Position when the open inspector is the moved node', async () => {
+  const res = await fetch(`${base}/nodes/move`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: form({ id: 'order-42', x: '10', y: '20', inspectorNode: 'order-42' }),
+  });
+  const html = await res.text();
+  assert.match(html, /<span id="inspector-position-order-42" hx-swap-oob="morph">10, 20<\/span>/);
+  // still the whole graph
+  assert.match(html, /<flow-node id="ship-7"/);
+});
+
+test('POST /nodes/move does NOT OOB when the open inspector is a different node', async () => {
+  const res = await fetch(`${base}/nodes/move`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: form({ id: 'order-42', x: '30', y: '40', inspectorNode: 'ship-7' }),
+  });
+  const html = await res.text();
+  assert.doesNotMatch(html, /hx-swap-oob/);
 });
 
 test('POST /nodes/create adds a node and returns the full graph', async () => {
@@ -144,6 +171,10 @@ test('GET /nodes/:id/panel returns the inspector partial', async () => {
   const html = await res.text();
   assert.match(html, /Order #42/);
   assert.match(html, /order-42/);
+  // Position lives in a node-keyed span so a move's OOB swap can target it
+  assert.match(html, /<span id="inspector-position-order-42">/);
+  // hidden marker that hx-include carries into flow requests (which node is open)
+  assert.match(html, /<input id="inspector-open" type="hidden" name="inspectorNode" value="order-42"/);
 });
 
 test('unknown node yields 404', async () => {

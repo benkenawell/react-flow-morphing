@@ -33,8 +33,15 @@ export function createApp({ store = createStore(defaultSeed()) } = {}) {
 
   app.post('/nodes/move', wrap((req, res) => {
     const { id, x, y } = req.body;
-    store.moveNode(id, x, y);
-    res.type('html').send(renderGraph());
+    const node = store.moveNode(id, x, y);
+    // Whole graph, plus an OOB Position update ONLY when the open inspector (whose
+    // node id rides along via hx-include) is the node that moved — otherwise the
+    // OOB would have no target and htmx would log an oobErrorNoTarget console error.
+    res.type('html').send(
+      req.body.inspectorNode === id
+        ? env.render('_graph-oob-position.njk', { ...store.toViewModel(), actions, node })
+        : renderGraph(),
+    );
   }));
 
   app.post('/nodes/create', wrap((req, res) => {
