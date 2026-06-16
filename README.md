@@ -4,7 +4,7 @@
 # react-flow-morphing
 
 Server-driven React Flow. The **server owns graph state** and drives the UI with HTML over the wire
-(htmx + idiomorph). React Flow is wrapped in a `<react-flow>` web component whose **light-DOM children
+(htmx + morphing). React Flow is wrapped in a `<react-flow>` web component whose **light-DOM children
 are the declarative graph**; node bodies are server HTML projected through slots.
 
 

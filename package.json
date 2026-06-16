@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Server-driven React Flow via web component + htmx + idiomorph",
+  "description": "Server-driven React Flow via web component + htmx morph",
   "packageManager": "pnpm@11.3.0",
   "scripts": {
     "build": "node scripts/build.js",
