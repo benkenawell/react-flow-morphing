@@ -15,11 +15,8 @@ importers:
         specifier: ^4.21.1
         version: 4.22.2
       htmx.org:
-        specifier: ^2.0.3
-        version: 2.0.10
-      idiomorph:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^4.0.0-beta4
+        version: 4.0.0-beta4
       nunjucks:
         specifier: ^3.2.4
         version: 3.2.4
@@ -442,8 +439,9 @@ packages:
   htmlparser2@10.1.0:
     resolution: {integrity: sha512-VTZkM9GWRAtEpveh7MSF6SjjrpNVNNVJfFup7xTY3UpFtm67foy9HDVXneLtFVt4pMz5kZtgNcvCniNFb1hlEQ==}
 
-  htmx.org@2.0.10:
-    resolution: {integrity: sha512-kdeJe7ZVwaS6QMz/ebBIVtZdpwen6L0OQ5GOhPV9MKBb196TCZeZu4yA7ZIQsaLKv7EpXz+So7KSXNuHXhj7Cw==}
+  htmx.org@4.0.0-beta4:
+    resolution: {integrity: sha512-gnz4FUkbWSGc+OK0MUq7KCyWDElaIJoQegwkdfL9Os8xwKugHvAvFJY5AL8n1vhTVDks3mugfOK5BWfZWKDqAw==}
+    hasBin: true
 
   http-errors@2.0.1:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
@@ -452,9 +450,6 @@ packages:
   iconv-lite@0.4.24:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
     engines: {node: '>=0.10.0'}
-
-  idiomorph@0.3.0:
-    resolution: {integrity: sha512-UhV1Ey5xCxIwR9B+OgIjQa+1Jx99XQ1vQHUsKBU1RpQzCx1u+b+N6SOXgf5mEJDqemUI/ffccu6+71l2mJUsRA==}
 
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
@@ -1046,7 +1041,7 @@ snapshots:
       domutils: 3.2.2
       entities: 7.0.1
 
-  htmx.org@2.0.10: {}
+  htmx.org@4.0.0-beta4: {}
 
   http-errors@2.0.1:
     dependencies:
@@ -1059,8 +1054,6 @@ snapshots:
   iconv-lite@0.4.24:
     dependencies:
       safer-buffer: 2.1.2
-
-  idiomorph@0.3.0: {}
 
   inherits@2.0.4: {}
 

@@ -60,7 +60,7 @@ export function toAction(el) {
     }
   }
   action.target = el.getAttribute('hx-target') || '#graph';
-  action.swap = el.getAttribute('hx-swap') || 'morph:innerHTML';
+  action.swap = el.getAttribute('hx-swap') || 'innerMorph';
   return action;
 }
 

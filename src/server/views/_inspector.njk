@@ -10,7 +10,7 @@
 <input id="inspector-open" type="hidden" name="inspectorNode" value="{{ node.id }}" />
 
 <form class="inspector-form"
-  hx-post="/nodes/{{ node.id }}/data" hx-target="#graph" hx-swap="morph:innerHTML">
+  hx-post="/nodes/{{ node.id }}/data" hx-target="#graph" hx-swap="innerMorph">
   <label>Title
     <input name="title" value="{{ node.data.title }}" autocomplete="off" />
   </label>

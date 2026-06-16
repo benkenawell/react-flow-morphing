@@ -16,10 +16,6 @@ class ReactFlowElement extends HTMLElement {
   #actions = [];
   #scheduled = false;
   #onFlowChanged = () => this.#scheduleRender();
-  // idiomorph adds fresh DOM htmx hasn't bound (a new node's Inspect trigger, a
-  // newly-shown Approve button). Every graph morph is an htmx swap targeting
-  // #graph (= this), so re-process this subtree after each swap. Idempotent.
-  #onAfterSwap = () => window.htmx?.process(this);
   // Serializes outgoing requests so their whole-graph responses morph IN ORDER.
   // Without this, concurrent actions (multi-delete, drag-while-saving, the edge
   // deletes React Flow fires alongside a node delete) race and the last response
@@ -44,18 +40,15 @@ class ReactFlowElement extends HTMLElement {
 
     this.#root = createRoot(mount);
 
-    // Precise signals instead of a catch-all observer: the <flow-*> children fire
-    // `flow:changed` when the graph model changes (so an in-body morph like a status
-    // badge does NOT re-render the canvas), and htmx's own afterSwap drives binding.
+    // The <flow-*> children fire `flow:changed` when the graph model changes (so
+    // an in-body morph like a status badge does NOT re-render the canvas).
     this.addEventListener('flow:changed', this.#onFlowChanged);
-    this.addEventListener('htmx:afterSwap', this.#onAfterSwap);
 
     this.#render();
   }
 
   disconnectedCallback() {
     this.removeEventListener('flow:changed', this.#onFlowChanged);
-    this.removeEventListener('htmx:afterSwap', this.#onAfterSwap);
     // Defer unmount out of React's commit phase.
     const root = this.#root;
     this.#root = null;

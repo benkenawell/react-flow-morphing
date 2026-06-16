@@ -1,12 +1,6 @@
-{# Response for an inspector edit: the whole graph (morphed into #graph) plus an
-   out-of-band refresh of #inspector so the panel reflects the saved server state.
-
-   The OOB swap MUST use a morph style, because hx-ext="morph" makes the idiomorph
-   extension intercept every OOB swap; its isInlineSwap() crashes on non-morph
-   styles like "innerHTML". "morph" (outerHTML) also avoids the swapStyle:selector
-   colon clash in the hx-swap-oob syntax, so the <aside> tag must match the real
-   element so its outerHTML morphs cleanly in place. #}
+{# Response for an inspector edit: the whole graph (morphed into #graph) plus a
+   partial that refreshes #inspector so the panel reflects the saved server state. #}
 {% include "_graph.njk" %}
-<aside id="inspector" hx-swap-oob="morph">
+<hx-partial hx-target="#inspector" hx-swap="innerHTML">
 {% include "_inspector.njk" %}
-</aside>
+</hx-partial>

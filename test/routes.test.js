@@ -33,7 +33,7 @@ test('GET / renders the full page with the web component and graph', async () =>
   // logs a "selector returned no matches" error
   assert.match(html, /<input id="inspector-open" type="hidden" name="inspectorNode" value=""/);
   assert.match(html, /flow-component\.js/);
-  assert.match(html, /hx-ext="morph"/);
+  assert.doesNotMatch(html, /hx-ext/);
   assert.match(html, /<flow-node id="order-42"[^>]*slot="node-order-42"/);
   // whole card is the inspector trigger (htmx in light DOM); no Inspect button,
   // and node click is NOT a flow-action (onNodeClick can't cross the shadow boundary)
@@ -71,8 +71,8 @@ test('POST /nodes/move returns the WHOLE graph with updated coords', async () =>
   // ...and the full list is returned (other node + actions present)
   assert.match(html, /<flow-node id="ship-7"/);
   assert.match(html, /<flow-action on="nodeDragStop"/);
-  // inspector not open -> no OOB position update (avoids htmx no-target error)
-  assert.doesNotMatch(html, /hx-swap-oob/);
+  // inspector not open -> no partial position update
+  assert.doesNotMatch(html, /hx-partial/);
 });
 
 test('POST /nodes/move OOB-updates Position when the open inspector is the moved node', async () => {
@@ -82,7 +82,7 @@ test('POST /nodes/move OOB-updates Position when the open inspector is the moved
     body: form({ id: 'order-42', x: '10', y: '20', inspectorNode: 'order-42' }),
   });
   const html = await res.text();
-  assert.match(html, /<span id="inspector-position-order-42" hx-swap-oob="morph">10, 20<\/span>/);
+  assert.match(html, /<hx-partial hx-target="#inspector-position-order-42" hx-swap="innerHTML">10, 20<\/hx-partial>/);
   // still the whole graph
   assert.match(html, /<flow-node id="ship-7"/);
 });
@@ -94,7 +94,7 @@ test('POST /nodes/move does NOT OOB when the open inspector is a different node'
     body: form({ id: 'order-42', x: '30', y: '40', inspectorNode: 'ship-7' }),
   });
   const html = await res.text();
-  assert.doesNotMatch(html, /hx-swap-oob/);
+  assert.doesNotMatch(html, /hx-partial/);
 });
 
 test('POST /nodes/create adds a node of the requested kind', async () => {
@@ -143,8 +143,8 @@ test('POST /nodes/:id/data edits fields; updates card + OOB inspector', async ()
   // node card (in the morphed graph) reflects the new title/amount
   assert.match(html, /Order #42 \(edited\)/);
   assert.match(html, /\$9\.99/);
-  // out-of-band inspector refresh is included (morph OOB), pre-filled with the saved value
-  assert.match(html, /<aside id="inspector" hx-swap-oob="morph">/);
+  // partial inspector refresh is included, pre-filled with the saved value
+  assert.match(html, /<hx-partial hx-target="#inspector" hx-swap="innerHTML">/);
   assert.match(html, /value="Order #42 \(edited\)"/);
 });
 

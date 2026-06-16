@@ -17,7 +17,7 @@
   <div class="card__actions">
     {# `consume` stops this click from also bubbling to the card's inspector trigger. #}
     <button type="button" hx-trigger="click consume"
-      hx-post="/orders/{{ n.id }}/approve" hx-target="#graph" hx-swap="morph:innerHTML">
+      hx-post="/orders/{{ n.id }}/approve" hx-target="#graph" hx-swap="innerMorph">
       Approve
     </button>
   </div>

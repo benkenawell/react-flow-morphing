@@ -10,7 +10,6 @@ const watch = process.argv.includes('--watch');
 
 const VENDOR = [
   ['node_modules/htmx.org/dist/htmx.min.js', 'public/vendor/htmx.min.js'],
-  ['node_modules/idiomorph/dist/idiomorph-ext.min.js', 'public/vendor/idiomorph-ext.min.js'],
 ];
 
 async function copyVendor() {

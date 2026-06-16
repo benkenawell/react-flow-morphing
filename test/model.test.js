@@ -41,7 +41,7 @@ test('flow-action -> on/method/url with target+swap defaults', () => {
     `<flow-action on="nodeDragStop" hx-post="/nodes/move"></flow-action>
      <flow-action on="nodeClick" hx-get="/nodes/{id}/panel" hx-target="#inspector" hx-swap="innerHTML"></flow-action>`,
   ));
-  assert.deepEqual(actions[0], { on: 'nodeDragStop', method: 'post', url: '/nodes/move', target: '#graph', swap: 'morph:innerHTML' });
+  assert.deepEqual(actions[0], { on: 'nodeDragStop', method: 'post', url: '/nodes/move', target: '#graph', swap: 'innerMorph' });
   assert.deepEqual(actions[1], { on: 'nodeClick', method: 'get', url: '/nodes/{id}/panel', target: '#inspector', swap: 'innerHTML' });
 });
 

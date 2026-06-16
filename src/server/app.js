@@ -26,7 +26,7 @@ export function createApp({ store = createStore(defaultSeed()) } = {}) {
   app.use(express.urlencoded({ extended: true }));
   app.use(express.static(resolve(root, 'public')));
 
-  // Every action route renders the SAME whole-graph fragment; idiomorph diffs it.
+  // Every action route renders the SAME whole-graph fragment; htmx morphs it.
   const renderGraph = () => env.render('_graph.njk', { ...store.toViewModel(), actions });
 
   app.get('/', (_req, res) => {

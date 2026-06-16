@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 A **server-driven** graph editor. React Flow renders the canvas, but the **server owns all state**
-and drives the UI with HTML over the wire (htmx + idiomorph). React Flow is wrapped in a `<react-flow>`
+and drives the UI with HTML over the wire (htmx v4, which has built-in morph). React Flow is wrapped in a `<react-flow>`
 custom element whose **light-DOM children are the declarative graph**.
 
 ## Commands
@@ -17,6 +17,13 @@ Package manager is **pnpm** (via mise). Run `mise install` first to get Node + p
 - `pnpm run dev` — esbuild `--watch` + `node --watch` server.
 - `pnpm start` — build then serve on http://localhost:3000.
 - `pnpm test` / `node --test` — full suite. Single file: `node --test test/routes.test.js`. Single case: `node --test --test-name-pattern "moveNode"`.
+
+## htmx 4 reference
+
+htmx 4 ships skill/guidance files for LLMs at:
+`node_modules/.pnpm/htmx.org@<version>/node_modules/htmx.org/dist/skills/`
+
+Files: `htmx-guidance.md`, `htmx-upgrade-from-htmx2.md`, `htmx-migration.md`, `htmx-debugging.md`, `htmx-extension-authoring.md`.
 
 **pnpm gotcha:** esbuild has a postinstall (fetches its platform binary); pnpm blocks build scripts by
 default. It's allowlisted in `pnpm-workspace.yaml` (`allowBuilds: { esbuild: true }`). If install logs
@@ -37,11 +44,10 @@ Flow of one action (e.g. drag):
 2. `react-flow.element.jsx` `#emit()` finds the matching `<flow-action on="nodeDragStop">`, builds params
    via `bridge.js`, and calls `htmx.ajax(...)` to its configured endpoint.
 3. Express mutates the in-memory `graph-store`, re-renders **the entire graph** (`_graph.njk`).
-4. **idiomorph** morphs that whole fragment into `#graph`'s light DOM, matching `<flow-node>` by stable
+4. **htmx's built-in morph** morphs that whole fragment into `#graph`'s light DOM, matching `<flow-node>` by stable
    `id` so only changed nodes mutate (untouched DOM identity preserved).
 5. The morphed `<flow-*>` children fire a bubbling `flow:changed` → the host re-derives via
-   `elementsToFlow()` → React reconciles. (And `htmx:afterSwap` on the host → `htmx.process(this)` to
-   bind any idiomorph-added controls.)
+   `elementsToFlow()` → React reconciles.
 
 Node bodies are **server HTML projected through a named `<slot>`**: each `<flow-node>` is a *direct*
 child of `<react-flow>` carrying `slot="node-{id}"` (slots only project direct host children), and the
@@ -53,13 +59,13 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
 - `src/server/graph-store.js` — **pure** in-memory model (`createStore`, `moveNode`, `addEdge`, …). No
   Express deps → unit-tested directly.
 - `src/server/app.js` — Express factory. **Every action route returns the whole `_graph.njk` fragment**;
-  idiomorph does the diffing. `createApp({store})` is exported separately from `server.js` so tests bind
+  htmx's morph does the diffing. `createApp({store})` is exported separately from `server.js` so tests bind
   an ephemeral port.
 - `src/server/actions.js` — the `<flow-action>` wiring (event name → endpoint), rendered into the graph.
 - `src/server/views/` — `page.njk` (shell + header toolbar whose "Add node" button is light-DOM htmx
   posting to `/nodes/create`; card CSS lives here since slotted bodies are styled by *document* CSS, not
   shadow CSS), `_graph.njk`, `_node-body.njk`, `_inspector.njk` (editable form), `_graph-oob-inspector.njk`
-  (edit response: graph + OOB inspector refresh).
+  (edit response: graph + `<hx-partial>` inspector refresh).
 - `src/client/model.js` + `bridge.js` — **pure, browser-free** (tested with linkedom). model = light DOM →
   React Flow inputs (`elementsToFlow` prefers `el.toModel()`, falls back to attribute parsing) + the pure
   `*Issues` validators; bridge = React Flow event → htmx params + `{id}` URL substitution.
@@ -70,7 +76,7 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
   (one schema; importable in node:test without DOM globals, since these classes `extends HTMLElement`).
 - `src/client/react-flow.element.jsx` — the host custom element (shadow root, React root, `#emit`,
   request `#queue`). Listens for `flow:changed` (re-derive/re-render — so in-body morphs like a status
-  badge no longer re-render the canvas) and `htmx:afterSwap` (→ `htmx.process(this)`). `index.js` defines
+  badge no longer re-render the canvas). `index.js` defines
   the data carriers **before** the host so the first render sees upgraded children.
 - `src/client/canvas.jsx` / `node-types.jsx` — controlled React Flow + the slot-rendering `CardNode`.
   Canvas also configures multi-select (`selectionOnDrag`; pan via middle/right mouse or scroll) and a
@@ -84,7 +90,7 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
   can cover them with linkedom. Put browser-only wiring in `react-flow.element.jsx`.
 - A named `<slot>` projects **only direct children of the shadow host** — keep `slot="node-{id}"` on the
   `<flow-node>` element itself, never on a nested wrapper.
-- Action routes must return the **full** graph, not a surgical fragment — idiomorph relies on stable
+- Action routes must return the **full** graph, not a surgical fragment — morph relies on stable
   `id`s to minimize the mutation.
 - **Node "kind" (domain type) is server-only.** Because bodies are server HTML projected through a slot,
   React Flow's node component is type-agnostic, so domain types (order/shipping/invoice) need **no
@@ -108,42 +114,36 @@ owns every node's visible HTML, and htmx buttons inside nodes Just Work (they're
   own `hx-get`. Add `hx-trigger="click consume"` to the inner control to stop that.
 - React Flow CSS is injected into the shadow root (`styles.js`, imported as text by esbuild's `.css` loader).
 - **Editable fields** are plain htmx forms in the inspector (light DOM) that POST to `/nodes/:id/data`;
-  the response morphs `#graph` (so the node card updates) and refreshes `#inspector` out-of-band. Add a
+  the response morphs `#graph` (so the node card updates) and refreshes `#inspector` via `<hx-partial>`. Add a
   new editable field by adding the input to `_inspector.njk` and the key to the route's allowlist in `app.js`.
-- **Live cross-panel updates via id-targeted OOB.** A drag starts on the canvas, but its `POST /nodes/move`
-  response can also carry an OOB `<span id="inspector-position-{id}" hx-swap-oob="morph">` (see
-  `_graph-oob-position.njk`) to update the inspector's Position. **Gotcha:** an OOB whose id has no match
-  in the DOM makes htmx log an `htmx:oobErrorNoTarget` **console.error** — and it's unsuppressable (htmx
-  logs in `triggerEvent` *before* dispatching the event, so no listener can stop it). So you can't just
-  "always emit the OOB and let id-matching decide" — the server must omit the OOB unless the panel is
-  open for that node. That "is it open?" signal is carried **declaratively, not in JS**: the inspector
-  panel renders a hidden `<input id="inspector-open" name="inspectorNode" value="{id}">`, and
+- **Live cross-panel updates via `<hx-partial>`.** A drag starts on the canvas, but its `POST /nodes/move`
+  response can also carry a `<hx-partial hx-target="#inspector-position-{id}" hx-swap="innerHTML">` (see
+  `_graph-oob-position.njk`) to update the inspector's Position. If the target doesn't exist in the DOM
+  (panel not open for that node), htmx silently skips it. The server still conditionally emits the partial
+  only when the panel is open, to keep responses minimal. That "is it open?" signal is carried
+  **declaratively, not in JS**: the inspector panel renders a hidden
+  `<input id="inspector-open" name="inspectorNode" value="{id}">`, and
   `<react-flow hx-include="#inspector-open">` makes htmx pull it into every flow request (the bridge
-  passes the host as the htmx `source`, so its `hx-include` is honored — htmx.js:3638/4074). The move
-  route OOB-updates Position only when `req.body.inspectorNode === movedId`. **No server state** (the
+  passes the host as the htmx `source`, so its `hx-include` is honored). The move
+  route emits the partial only when `req.body.inspectorNode === movedId`. **No server state** (the
   open-node id lives in the DOM and rides along per-request) and **no per-action client JS**. Note: an
-  `hx-include` selector that matches **zero** elements makes htmx `logError` ("returned no matches!",
-  htmx.js:1372), so the marker must ALWAYS exist — `page.njk` seeds an empty `#inspector-open` in
-  `#inspector` (replaced by the node-valued one when a panel opens), and the "Click a node" placeholder
-  is server-rendered (`.inspector-placeholder`) rather than CSS `:empty` (the seed makes it non-empty).
-  General pattern for
+  `hx-include` selector that matches **zero** elements makes htmx log an error, so the marker must
+  ALWAYS exist — `page.njk` seeds an empty `#inspector-open` in `#inspector` (replaced by the
+  node-valued one when a panel opens), and the "Click a node" placeholder is server-rendered
+  (`.inspector-placeholder`) rather than CSS `:empty` (the seed makes it non-empty). General pattern for
   "update another panel iff it's showing the affected entity": panel renders a hidden marker → host
-  `hx-include` carries it → server compares and conditionally OOBs. Use a `<span>` (not `<dd>`/`<td>`
-  etc.) for the OOB target so the standalone fragment isn't dropped by context-sensitive HTML parsing.
+  `hx-include` carries it → server compares and conditionally emits a `<hx-partial>`.
 - **Node status** is an enum in `src/server/statuses.js` (`STATUSES` / `isStatus`) — the single source
   of truth for the inspector's `<select>` (exposed to all templates via `env.addGlobal('statuses', …)`),
   the route's validation, and the `.card--{status}` CSS in `page.njk`. Add a status in all three when
   extending it (the route rejects unknown values so cards stay styleable).
-- **OOB swaps must use a `morph` style.** Because `hx-ext="morph"` is on `<body>`, the idiomorph
-  extension intercepts every OOB swap, and its `isInlineSwap()` throws on non-morph styles like
-  `innerHTML` (`Cannot read properties of undefined (reading 'swapStyle')`). Use `hx-swap-oob="morph"`
-  and make the OOB element's tag match the real element (it morphs *outerHTML* in place) — see
-  `_graph-oob-inspector.njk`. Don't write `morph:innerHTML` in `hx-swap-oob`: the `:` collides with the
-  OOB `style:selector` syntax.
-- **New controls added by a morph need re-processing.** idiomorph preserves existing elements (their
-  htmx bindings survive) but *added* nodes are fresh DOM htmx never saw, so their hx-* controls (e.g. a
-  new node's Inspect button) won't fire until processed. `react-flow.element.jsx` `#render()` calls
-  `window.htmx.process(this)` after every morph to bind them (idempotent on already-bound nodes).
+- **`<hx-partial>` for multi-region updates.** Instead of `hx-swap-oob`, responses include
+  `<hx-partial hx-target="..." hx-swap="...">` tags. Each partial specifies its own target and swap
+  strategy explicitly. htmx processes partials after the main content swap. See
+  `_graph-oob-inspector.njk` and `_graph-oob-position.njk`.
+- **New controls added by a morph are automatically processed by htmx v4.** Unlike the old idiomorph
+  extension, htmx v4's built-in morph handles element processing natively — no manual `htmx.process()`
+  call needed.
 
 ## Verification beyond tests
 

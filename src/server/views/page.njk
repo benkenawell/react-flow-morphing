@@ -63,13 +63,12 @@
     .card--draft .badge { background: #f3f4f6; color: #4b5563; }
     .card--new .badge { background: #ede9fe; color: #5b21b6; }
   </style>
-  <!-- htmx + the idiomorph swap extension (registers hx-swap="morph:*") -->
+  <!-- htmx v4 (built-in morph support) -->
   <script src="/vendor/htmx.min.js"></script>
-  <script src="/vendor/idiomorph-ext.min.js"></script>
   <!-- the React Flow web component bundle -->
   <script type="module" src="/flow-component.js"></script>
 </head>
-<body hx-ext="morph">
+<body>
   <header>
     <div>
       <h1>Server-Driven React Flow</h1>
@@ -86,7 +85,7 @@
         {% for key, t in nodeKinds %}
         <li><button type="button" command="hide-popover" commandfor="add-popover"
           hx-post="/nodes/create" hx-vals='{"kind":"{{ key }}"}'
-          hx-target="#graph" hx-swap="morph:innerHTML">{{ t.label }}</button></li>
+          hx-target="#graph" hx-swap="innerMorph">{{ t.label }}</button></li>
         {% endfor %}
       </menu>
       <span class="hint">Drag on the canvas to multi-select · ⌫ deletes selection</span>
